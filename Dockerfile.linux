@@ -1,0 +1,28 @@
+FROM lacledeslan/gamesvr-srcds:linux
+
+MAINTAINER Laclede's LAN <contact@lacledeslan.com>
+
+ENV IMAGE="gamesvr-srcds-7daystodie:linux"
+
+WORKDIR /app/bin/
+
+# Install Black Mesa
+RUN useradd \
+		--shell /bin/bash \
+		7DAYSTODIE &&\
+	# Create output directory &&\
+		mkdir /app/bin --parents &&\
+	# Download &&\
+		/app/steamcmd/steamcmd.sh \
+			+login anonymous \
+			+force_install_dir /app/bin/ \
+			+app_update 294420 validate \
+			+quit &&\
+	# Set permissions &&\
+		chown -R 7DAYSTODIE /app/bin
+	
+COPY ./dist/ /app/bin/
+
+USER 7DAYSTODIE
+
+CMD ["/bin/bash"]
