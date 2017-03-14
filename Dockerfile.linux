@@ -6,10 +6,10 @@ ENV IMAGE="gamesvr-srcds-7daystodie:linux"
 
 WORKDIR /app/bin/
 
-# Install Black Mesa
+# Install 7 Days to Die
 RUN useradd \
 		--shell /bin/bash \
-		7DAYSTODIE &&\
+		7DaysToDie &&\
 	# Create output directory &&\
 		mkdir /app/bin --parents &&\
 	# Download &&\
@@ -19,10 +19,10 @@ RUN useradd \
 			+app_update 294420 validate \
 			+quit &&\
 	# Set permissions &&\
-		chown -R 7DAYSTODIE /app/bin
-	
+		chown -R 7DaysToDie /app/bin
+
 COPY ./dist/ /app/bin/
 
-USER 7DAYSTODIE
+USER 7DaysToDie
 
 CMD ["/bin/bash"]
