@@ -17,7 +17,7 @@ RUN useradd `
 		7DaysToDie &&`
 	chown -R 7DaysToDie:srcds /app/bin
 
-USER BLACKMESA 7DaysToDie
+USER 7DaysToDie
 
 # Copy files (if any) from the build-cache
 COPY ./build-cache/ /app/bin/
