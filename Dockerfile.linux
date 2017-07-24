@@ -1,31 +1,37 @@
+# escape=`
+
 FROM lacledeslan/gamesvr-srcds:linux
 
 LABEL maintainer "Laclede's LAN <contact@lacledeslan.com>"
 
 ENV IMAGE="gamesvr-srcds-7daystodie:linux"
 
-WORKDIR /app/bin/
-
 HEALTHCHECK NONE
+
+# Set up user
+RUN useradd `
+		--home /app/bin `
+		--gid srcds `
+		--shell /bin/bash `
+		--system `
+		7DaysToDie &&`
+	chown -R 7DaysToDie:srcds /app/bin
+
+USER BLACKMESA 7DaysToDie
 
 # Copy files (if any) from the build-cache
 COPY ./build-cache/ /app/bin/
 
-# Install 7 Days to Die
-RUN useradd \
-		--shell /bin/bash \
-		7DaysToDie &&\
-	# Create output directory &&\
-		mkdir /app/bin --parents &&\
-	# Download &&\
-		/app/steamcmd/steamcmd.sh \
-			+login anonymous \
-			+force_install_dir /app/bin/ \
-			+app_update 294420 validate \
-			+quit &&\
-	# Set permissions &&\
-		chown -R 7DaysToDie /app/bin
+# Install 7 Days to Die Server
+RUN echo "Downloading 7 Days to Die via SteamCMD" &&`
+		/app/steamcmd/steamcmd.sh `
+			+login anonymous `
+			+force_install_dir /app/bin/ `
+			+app_update 294420 validate `
+			+quit
 
-USER 7DaysToDie
+WORKDIR /app/bin/
 
 CMD ["/bin/bash"]
+
+ONBUILD USER root
