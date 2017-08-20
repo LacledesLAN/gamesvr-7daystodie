@@ -1,6 +1,6 @@
 # escape=`
 
-FROM lacledeslan/steamcmd:linux as 7days-builder
+FROM lacledeslan/steamcmd:linux as sevendays-builder
 
 #=======================================================================
 FROM debian:stretch-slim
@@ -31,7 +31,7 @@ COPY ./build-cache/ /output
 ## 7 Days to Die is so large we can't reliably use multi-stage builds in docker cloud
 
 #Pull in SteamCMD
-COPY --from=7days-builder /app /app/steamcmd
+COPY --from=sevendays-builder /app /app/steamcmd
 
 # Install 7 Days to Die using SteamCMD
 RUN echo $'\n\nDownloading 7 Days to Die via SteamCMD' &&`
