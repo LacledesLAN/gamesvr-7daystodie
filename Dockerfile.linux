@@ -1,37 +1,58 @@
 # escape=`
 
-FROM lacledeslan/gamesvr-srcds:linux
+FROM lacledeslan/steamcmd:linux as 7days-builder
 
-LABEL maintainer "Laclede's LAN <contact@lacledeslan.com>"
+#=======================================================================
+FROM debian:stretch-slim
 
-ENV IMAGE="gamesvr-srcds-7daystodie:linux"
+ARG VCS_REF
 
 HEALTHCHECK NONE
 
-# Set up user
-RUN useradd `
-		--home /app/bin `
-		--gid srcds `
-		--shell /bin/bash `
-		--system `
-		7DaysToDie &&`
-	chown -R 7DaysToDie:srcds /app/bin
+LABEL MAINTAINER="Laclede's LAN <contact@lacledeslan.com>" `
+      org.label-schema.url="https://github.com/LacledesLAN" `
+      org.label-schema.vendor="Laclede's LAN" `
+      org.label-schema.vcs-ref=$VCS_REF `
+      org.label-schema.name="gamesvr-7daystodie" `
+      org.label-schema.description="7 Days to Die Server" `
+      org.label-schema.vcs-url="https://github.com/LacledesLAN/gamesvr-7daystodie"
+
+## Dependencies & Environment
+RUN dpkg --add-architecture i386;
+
+RUN apt-get update && apt-get install -y `
+        ca-certificates lib32gcc1 libcurl3-gnutls libstdc++6 libstdc++6:i386 libncurses5 &&`
+    apt-get clean &&`
+    rm -rf /var/lib/apt/lists/*;
+
+# Copy cached build files (if any)
+COPY ./build-cache/ /output
+
+## 7 Days to Die is so large we can't reliably use multi-stage builds in docker cloud
+
+#Pull in SteamCMD
+COPY --from=7days-builder /app /app/steamcmd
+
+# Install 7 Days to Die using SteamCMD
+RUN echo $'\n\nDownloading 7 Days to Die via SteamCMD' &&`
+        /app/steamcmd/steamcmd.sh `
+            +login anonymous `
+            +force_install_dir /app `
+            +app_update 294420 validate `
+            +quit;
+
+#Add user "7DaysToDie". Assign to group "root" until [github.com/moby/moby/pull/34263] makes it into CE stable
+RUN mkdir --parents /app/.steam/sdk32 &&`
+    useradd `
+        --home /app `
+        --gid root `
+        --system `
+        7DaysToDie
+
+RUN ln -s /app/bin/steamclient.so /app/.steam/sdk32/steamclient.so
 
 USER 7DaysToDie
 
-# Copy files (if any) from the build-cache
-COPY ./build-cache/ /app/bin/
-
-# Install 7 Days to Die Server
-RUN echo "Downloading 7 Days to Die via SteamCMD" &&`
-		/app/steamcmd/steamcmd.sh `
-			+login anonymous `
-			+force_install_dir /app/bin/ `
-			+app_update 294420 validate `
-			+quit
-
-WORKDIR /app/bin/
-
-CMD ["/bin/bash"]
+WORKDIR /app
 
 ONBUILD USER root
