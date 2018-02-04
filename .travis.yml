@@ -12,7 +12,7 @@ services:
 
 script:
   - docker version
-  - docker build --no-cache --tag lltest/7daystodie --tag lacledeslan/7daystodie-cssource --build-arg BUILDNODE=TravisCI ./linux
+  - docker build --no-cache --tag lltest/7daystodie --tag lacledeslan/gamesvr-7daystodie --build-arg BUILDNODE=TravisCI ./linux
 
 notifications:
   slack:
