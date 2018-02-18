@@ -1,0 +1,25 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "docker pull debian:stable-slim; docker pull lacledeslan/steamcmd:linux; docker build ./linux -t lltest/gamesvr-7daystodie --no-cache --build-arg BUILDNODE=$env:computername;",
+            "group": "build",
+            "identifier": "build-image",
+            "problemMatcher": [],
+            "promptOnClose": true
+        },
+        {
+            "label": "Build & Shell In",
+            "type": "shell",
+            "command": "docker run -it --net=host --rm lltest/gamesvr-7daystodie;",
+            "dependsOn": "build-image",
+            "group": "build",
+            "problemMatcher": [],
+            "promptOnClose": true
+        }
+    ]
+}

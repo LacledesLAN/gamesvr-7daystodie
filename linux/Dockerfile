@@ -1,14 +1,29 @@
 # escape=`
 
-FROM lacledeslan/steamcmd:linux as steamcmd-builder
+FROM lacledeslan/steamcmd:linux as seven-builder
+
+# Copy cached build files (if any)
+COPY ./build-cache /output
+
+# Download 7 Days to Die Dedicated Server
+RUN /app/steamcmd.sh +login anonymous +force_install_dir /output +app_update 294420 validate +quit;
 
 #=======================================================================
 FROM debian:stable-slim
 
-HEALTHCHECK NONE
-
 ARG BUILDNODE=unspecified
 ARG SOURCE_COMMIT=unspecified
+
+HEALTHCHECK NONE
+
+RUN dpkg --add-architecture i386 &&`
+    apt-get update && apt-get install -y `
+        ca-certificates lib32gcc1 libc6-i386 lib32stdc++6 locales locales-all tmux xmlstarlet &&`
+    apt-get clean &&`
+    echo "LC_ALL=en_US.UTF-8" >> /etc/environment &&`
+    rm -rf /var/lib/apt/lists/*;
+
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 LABEL com.lacledeslan.build-node=$BUILDNODE `
       org.label-schema.schema-version="1.0" `
@@ -18,31 +33,19 @@ LABEL com.lacledeslan.build-node=$BUILDNODE `
       org.label-schema.description="7 Days to Die Dedicated Server" `
       org.label-schema.vcs-url="https://github.com/LacledesLAN/gamesvr-7daystodie"
 
-RUN dpkg --add-architecture i386 &&`
-    apt-get update && apt-get install -y `
-        ca-certificates lib32gcc1 libc6-i386 lib32stdc++6 xmlstarlet &&`
-    apt-get clean &&`
-    rm -rf /var/lib/apt/lists/*;
+# Set up Enviornment
+RUN useradd --home /app --gid root --system 7DaysToDie &&`
+    mkdir -p /app/ll-tests &&`
+    chown 7DaysToDie:root -R /app;
 
-## 7 Days to Die is so large we can't reliably use multi-stage builds in docker cloud
+COPY --chown=7DaysToDie:root --from=seven-builder /output /app
 
-# Copy cached build files (if any)
-COPY ./build-cache /app
-
-#Pull in SteamCMD
-COPY --from=steamcmd-builder /app /app/steamcmd
-
-## Add in tests
-COPY ./ll-tests /app/ll-tests
-
-# Install 7 Days to Die using SteamCMD
-RUN echo $'\n\nDownloading 7 Days to Die via SteamCMD' &&`
-        /app/steamcmd/steamcmd.sh `
-            +login anonymous `
-            +force_install_dir /app `
-            +app_update 294420 validate `
-            +quit;
+COPY --chown=7DaysToDie:root ./ll-tests /app/ll-tests
 
 RUN chmod +x /app/ll-tests/*.sh;
 
 WORKDIR /app
+
+CMD ["/bin/bash"]
+
+ONBUILD USER root
