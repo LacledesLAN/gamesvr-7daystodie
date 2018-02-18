@@ -44,6 +44,8 @@ COPY --chown=7DaysToDie:root ./ll-tests /app/ll-tests
 
 RUN chmod +x /app/ll-tests/*.sh;
 
+USER 7DaysToDie
+
 WORKDIR /app
 
 CMD ["/bin/bash"]
