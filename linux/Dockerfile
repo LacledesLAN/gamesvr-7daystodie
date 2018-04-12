@@ -2,11 +2,22 @@
 
 FROM lacledeslan/steamcmd:linux as seven-builder
 
-# Copy cached build files (if any)
-COPY ./build-cache /output
+ARG SKIP_STEAMCMD=false
 
-# Download 7 Days to Die Dedicated Server
-RUN /app/steamcmd.sh +login anonymous +force_install_dir /output +app_update 294420 validate +quit;
+# Copy cached build files (if any)
+COPY --chown=SteamCMD:root  ./steamcmd-cache /output
+
+# Download 7 Days to Die Dedicated Server via SteamCMD
+RUN if [ "$SKIP_STEAMCMD" = true ] ; then `
+        echo "\n\nSkipping SteamCMD install -- using only contents from steamcmd-cache\n\n"; `
+    else `
+        echo "\n\nDownloading 7 Days to Die Dedicated Server via SteamCMD"; `
+        /app/steamcmd.sh `
+            +login anonymous `
+            +force_install_dir /output  `
+            +app_update 294420 validate `
+            +quit; `
+    fi;
 
 #=======================================================================
 FROM debian:stable-slim
