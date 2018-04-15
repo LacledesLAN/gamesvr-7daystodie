@@ -22,7 +22,7 @@ notifications:
     secure: bQTz1ILVX+UfOcyUo+Tnu/AYmZx2iVIaO000mXoS2Iv2GHkMNW4ip2Y3FShMBJunvMdc471ar57Zo8BYNC3Y3oqNJ+LTiyl9A/cOne/BjFV6PWh0Tnrk9M7XzcJOWzm0gnPxqSFv2qgnSd1kxYH6JxACkuRUttU/ZvYyHMN8rYliPJkL7f6mcFWayTmBtz2tRI+057FzP4yeY6s8gCoXAiBbafvA7M3M/QRA8ECcY3to7w+RTsQhoZ5SxtGDWVjOMzM+dh1m2dG/oSQxrjNp1lG6AANbyBBRBZ56MrX8akRxdeleVJ3PZm6r+dyaRYUY9tT9i8VzB37wKlf+bhNrh46KvV7W3Z6KIQ3AQYj59/CcdM1DsMRzo1wCClLYL+GbQMPTtvU5xRFjPfpWzKaEFD+p20ncv6OhLG05DG+A88+XdR4R5U2VRAOBRn6KeRMpyZn56mwQ5ky6wm0O+4HKerS6bSMtbKQa8UNf+/OB8dmgrJH1/vOsHotNsOa7dsEQL5ZpjlaytTSAVnRGL+SPVAR2x3ymGTNBUdZpgXJeeOdVLZZngBi71ZvGiSangJfewn8rjkq7RBfoTaXlsjJtAmgoLfS9GUu9RZaWhWYCvj5Ai0oUNU/q/DTK1cL4s5rv5s+NPMXrab7oSucAntX9x8X5Ubsi0UBgrVagruR7cE8=
 
 before_deploy:
-  - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin;
+  - echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin;
 deploy:
   provider: script
   script: docker push lacledeslan/gamesvr-7daystodie
