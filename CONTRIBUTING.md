@@ -1,8 +1,8 @@
-## Contributing
+# Contributing
 
 First off, thank you for considering contributing to `gamesvr-7daystodie`. It's people like you that make Laclede's LAN such a great community.
 
-### Did you find a bug or have questions?
+## Did you find a bug or have questions?
 
 Let us know by using [GitHub issues](https://github.com/LacledesLAN/gamesvr-7daystodie/issues) on this repository.
 

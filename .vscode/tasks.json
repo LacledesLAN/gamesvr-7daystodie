@@ -4,28 +4,31 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build",
-            "type": "shell",
-            "command": "docker pull debian:stable-slim; docker pull lacledeslan/steamcmd:linux; docker build ./linux -t lltest/gamesvr-7daystodie --no-cache --build-arg BUILDNODE=$env:computername;",
-            "group": "build",
-            "identifier": "build-image",
-            "problemMatcher": [],
-            "promptOnClose": true
+            "label": "Linux - Build Docker Image",
+            "type": "docker-build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dockerBuild": {
+                "context": "${workspaceFolder}",
+                "dockerfile": "${workspaceFolder}/linux.Dockerfile",
+                "tag": "ll/gamesvr-7daystodie",
+                "pull": true,
+                "labels": {
+                    "com.lacledeslan.build-node": "${env:computername}",
+                    "org.opencontainers.image.version": "dirty (work in progress)"
+                }
+            }
         },
         {
-            "label": "Build & Shell In",
-            "type": "shell",
-            "command": "docker run -it --net=host --rm lltest/gamesvr-7daystodie;",
-            "dependsOn": "build-image",
-            "group": "build",
-            "problemMatcher": [],
-            "promptOnClose": true
-        },
-        {
-            "label": "Build local SteamCMD cache",
-            "type": "shell",
-            "command": "docker run --rm -v ${cwd}/linux/steamcmd-cache:/output lacledeslan/steamcmd:linux ./steamcmd.sh +login anonymous +force_install_dir /output +app_update 294420 validate +quit",
-            "problemMatcher": []
+            "label": "Linux - Build local SteamCMD cache",
+            "type":"shell",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "command": "docker pull lacledeslan/steamcmd; docker run -it --rm -v ${workspaceFolder}/linux/steamcmd-cache:/output lacledeslan/steamcmd ./steamcmd.sh +force_install_dir /output +login anonymous +app_update 294420 validate +quit;"
         }
     ]
 }

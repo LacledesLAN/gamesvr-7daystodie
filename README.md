@@ -6,16 +6,16 @@
 
 This repository is maintained by [Laclede's LAN](https://lacledeslan.com). Its contents are intended to be bare-bones and used as a stock server. For examples of building a customized server from this Docker image browse its related child-project [gamesvr-7daystodie-freeplay](https://github.com/LacledesLAN/gamesvr-7daystodie-freeplay). If any documentation is unclear or it has any issues please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-# Linux Container
-[![](https://images.microbadger.com/badges/version/lacledeslan/gamesvr-7daystodie.svg)](https://microbadger.com/images/lacledeslan/gamesvr-7daystodie "Get your own version badge on microbadger.com")
-[![](https://images.microbadger.com/badges/image/lacledeslan/gamesvr-7daystodie.svg)](https://microbadger.com/images/lacledeslan/gamesvr-7daystodie "Get your own image badge on microbadger.com")
+## Linux Container
 
-## Download
+### Download
+
 ```shell
 docker pull lacledeslan/gamesvr-7daystodie
 ```
 
-## Run Interactive Server
+### Run Interactive Server
+
 ```shell
 docker run -it --rm --net=host lacledeslan/gamesvr-7daystodie ./startserver.sh -configfile=serverconfig.xml
 ```
