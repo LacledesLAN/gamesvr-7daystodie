@@ -1,12 +1,14 @@
 # 7 Days to Die Dedicated Server in Docker
 
-7 Days to Die is a survival horror video game set in an open world.  Players are survivors of World War  3 that destroyed an extremely large part of the world, except for some areas such as the fictional county of Navezgane, Arizona. Players must survive by finding shelter, food and water, as well as scavenging supplies to fend off the numerous zombies (hinted to be the consequence of nuclear fallout) that populate Navezgane. Player interactions can be cooperative or hostile depending on the used server options - there are two supported game modes for multiplayer: Survival (both randomly generated and standard) and Creative.
+7 Days to Die is a survival horror video game set in an open world.  Players are survivors of World War 3 that destroyed an extremely large part of the world, except for some areas such as the fictional county of Navezgane, Arizona. Players must survive by finding shelter, food and water, as well as scavenging supplies to fend off the numerous zombies (hinted to be the consequence of nuclear fallout) that populate Navezgane. Player interactions can be cooperative or hostile depending on the used server options - there are two supported game modes for multiplayer: Survival (both randomly generated and standard) and Creative.
 
 ![7 Days to Die Box Art](https://raw.githubusercontent.com/LacledesLAN/gamesvr-7daystodie/master/.misc/boxart.jpg "7 Days to Die Box Art")
 
 This repository is maintained by [Laclede's LAN](https://lacledeslan.com). Its contents are intended to be bare-bones and used as a stock server. For examples of building a customized server from this Docker image browse its related child-project [gamesvr-7daystodie-freeplay](https://github.com/LacledesLAN/gamesvr-7daystodie-freeplay). If any documentation is unclear or it has any issues please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Linux Container
+
+[![linux/amd64](https://github.com/LacledesLAN/gamesvr-7daystodie/actions/workflows/build-linux-image.yml/badge.svg)](https://github.com/LacledesLAN/gamesvr-7daystodie/actions/workflows/build-linux-image.yml)
 
 ### Download
 
