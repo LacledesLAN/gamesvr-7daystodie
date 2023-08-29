@@ -1,11 +1,11 @@
 # escape=`
 
-FROM lacledeslan/steamcmd:linux as seven-builder
+FROM lacledeslan/steamcmd as seven-builder
 
 ARG SKIP_STEAMCMD=false
 
 # Copy cached build files (if any)
-COPY --chown=SteamCMD:root  ./linux/steamcmd-cache /output
+COPY --chown=SteamCMD:root  ./dist/linux/steamcmd-cache /output
 
 # Download 7 Days to Die Dedicated Server via SteamCMD
 RUN if [ "$SKIP_STEAMCMD" = true ] ; then `
@@ -18,6 +18,8 @@ RUN if [ "$SKIP_STEAMCMD" = true ] ; then `
             +app_update 294420 validate `
             +quit; `
     fi;
+
+COPY ./dist/linux/ll-tests /output/ll-tests
 
 #=======================================================================
 FROM debian:bookworm-slim
@@ -42,14 +44,10 @@ ENV LANGUAGE=en_US.UTF-8
 
 # Set up Enviornment
 RUN useradd --home /app --gid root --system 7DaysToDie &&`
-    mkdir -p /app/ll-tests &&`
+    mkdir -p /app &&`
     chown 7DaysToDie:root -R /app;
 
-# `RUN true` lines are work around for https://github.com/moby/moby/issues/36573
 COPY --chown=7DaysToDie:root --from=seven-builder /output /app
-RUN true
-
-COPY --chown=7DaysToDie:root ./linux/ll-tests /app/ll-tests
 
 RUN chmod +x /app/ll-tests/*.sh;
 
