@@ -8,8 +8,6 @@ This repository is maintained by [Laclede's LAN](https://lacledeslan.com). Its c
 
 ## Linux Container
 
-[![linux/amd64](https://github.com/LacledesLAN/gamesvr-7daystodie/actions/workflows/build-linux-image.yml/badge.svg)](https://github.com/LacledesLAN/gamesvr-7daystodie/actions/workflows/build-linux-image.yml)
-
 ### Download
 
 ```shell
