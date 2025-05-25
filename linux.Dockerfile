@@ -42,7 +42,7 @@ RUN dpkg --add-architecture i386 &&`
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 
-# Set up Enviornment
+# Set up Environment
 RUN useradd --home /app --gid root --system 7DaysToDie &&`
     mkdir -p /app &&`
     chown 7DaysToDie:root -R /app;
