@@ -1,6 +1,6 @@
 # escape=`
 
-FROM lacledeslan/steamcmd as seven-builder
+FROM lacledeslan/steamcmd AS seven-builder
 
 ARG SKIP_STEAMCMD=false
 
