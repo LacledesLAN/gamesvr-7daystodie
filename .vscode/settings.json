@@ -18,6 +18,7 @@
         "opencontainers",
         "serverconfig",
         "startserver",
-        "steamcmd"
+        "steamcmd",
+        "trixie"
     ]
 }

@@ -22,15 +22,15 @@ RUN if [ "$SKIP_STEAMCMD" = true ] ; then `
 COPY ./dist/linux/ll-tests /output/ll-tests
 
 #=======================================================================
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ARG BUILDNODE=unspecified
 ARG SOURCE_COMMIT=unspecified
 
-LABEL org.opencontainers.image.source https://github.com/LacledesLAN/gamesvr-7daystodie
-LABEL org.opencontainers.image.title "7 Days to Die Dedicated Server"
-LABEL org.opencontainers.image.url https://github.com/LacledesLAN/README.1ST
-LABEL org.opencontainers.image.vendor "Laclede's LAN"
+LABEL org.opencontainers.image.source=https://github.com/LacledesLAN/gamesvr-7daystodie
+LABEL org.opencontainers.image.title="7 Days to Die Dedicated Server"
+LABEL org.opencontainers.image.url=https://github.com/LacledesLAN/README.1ST
+LABEL org.opencontainers.image.vendor="Laclede's LAN"
 
 RUN dpkg --add-architecture i386 &&`
     apt-get update && apt-get install -y `
