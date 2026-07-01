@@ -1,0 +1,6 @@
+.git/**
+.github/**
+.misc/**
+.vscode/**
+.gitkeep
+tests/
