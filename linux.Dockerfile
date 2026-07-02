@@ -28,9 +28,11 @@ RUN --mount=type=cache,id=7daystodie-steamcmd-cache,target=/mnt/steam-cache \
 #=======================================================================
 FROM debian:trixie-slim
 
+# Added SOURCE_URL here
 ARG BUILDDATE=unspecified \
     BUILDNODE=unspecified \
-    SOURCE_COMMIT=unspecified
+    SOURCE_COMMIT=unspecified \
+    SOURCE_URL=https://github.com/LacledesLAN/gamesvr-7daystodie
 
 LABEL architecture="amd64" \
       maintainer="Laclede's LAN <contact@lacledeslan.com>" \
@@ -38,7 +40,7 @@ LABEL architecture="amd64" \
       org.opencontainers.image.created=$BUILDDATE \
       org.opencontainers.image.description="7 Days to Die Dedicated Server" \
       org.opencontainers.image.revision=$SOURCE_COMMIT \
-      org.opencontainers.image.source=https://github.com/LacledesLAN/gamesvr-7daystodie \
+      org.opencontainers.image.source=$SOURCE_URL \
       org.opencontainers.image.url=https://github.com/LacledesLAN/README.1ST \
       org.opencontainers.image.vendor="Laclede's LAN"
 

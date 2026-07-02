@@ -3,38 +3,48 @@ set -euo pipefail
 
 #######################################################################################################################
 #######################################################################################################################
-dockerfile_path='linux.Dockerfile'
-docker_test_command=(/app/startserver.sh -configfile=serverconfig.xml)
+# GAME SERVER CONFIGURATION
+# Modify these variables when copying this script to a new game server repository.
+#######################################################################################################################
+IMAGE_REPO="lacledeslan"
+IMAGE_NAME="gamesvr-7daystodie"
+DOCKERFILE_PATH='linux.Dockerfile'
+DOCKER_TEST_COMMAND=(/app/startserver.sh -configfile=serverconfig.xml)
 
-# All tags in this array will be applied simultaneously during `docker build`.
-docker_tags=(
-    'lacledeslan/gamesvr-7daystodie:latest'
+# Automatically generated tags based on configuration
+DOCKER_TAGS=(
+    "${IMAGE_REPO}/${IMAGE_NAME}:latest"
 )
+
+# Automatically determine the path to the test script
+TEST_SCRIPT_PATH="./tests/test-${IMAGE_NAME}.sh"
 #######################################################################################################################
 #######################################################################################################################
 
-# Ensure docker_tags is defined and not empty immediately to satisfy set -u safely
-if [ ${#docker_tags[@]} -eq 0 ]; then
-    printf "ERROR: No docker_tags have been defined. Please specify at least one tag.\n" >&2
+# Ensure DOCKER_TAGS is defined and not empty immediately
+if (( ${#DOCKER_TAGS[@]} == 0 )); then
+    printf "ERROR: No DOCKER_TAGS have been defined. Please specify at least one tag.\n" >&2
     exit 1
 fi
+
+
 
 #
 # PREFLIGHT
 #
-SOURCE_COMMIT="unspecified"
 CURRENT_HOST=$(hostname 2>/dev/null || echo "unknown-host")
 
-if command -v git &> /dev/null && git rev-parse --git-dir &> /dev/null; then
-    SOURCE_COMMIT=$(git rev-parse --short HEAD)$([ -n "$(git status --porcelain)" ] && echo "-dirty")
-    printf "# Building %s from \`%s\` on %s\n" "${docker_tags[0]}" "$SOURCE_COMMIT" "$CURRENT_HOST"
-else
-    printf "# Building %s on %s\n" "${docker_tags[0]}" "$CURRENT_HOST"
-fi
+# Verify required command-line tools exist
+for cmd in git docker; do
+    if ! command -v "$cmd" &> /dev/null; then
+        printf "ERROR: %s is not installed or not in your PATH.\n" "${cmd^}" >&2
+        exit 1
+    fi
+done
 
-# Verify docker command-line tool exists
-if ! command -v docker &> /dev/null; then
-    printf "ERROR: Docker is not installed or not in your PATH.\n" >&2
+# Verify current workspace is a git repository
+if ! git rev-parse --git-dir &> /dev/null; then
+    printf "ERROR: The current directory is not a Git repository.\n" >&2
     exit 1
 fi
 
@@ -43,34 +53,41 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
+SOURCE_COMMIT=$(git rev-parse --short HEAD)$([ -n "$(git status --porcelain)" ] && echo "-dirty")
+
+# Extract Git remote URL and normalize it to an HTTPS web URL format for labels
+RAW_REMOTE=$(git config --get remote.origin.url || echo "unknown-remote")
+if [[ "$RAW_REMOTE" == git@github.com:* ]]; then
+    SOURCE_URL="https://github.com/${RAW_REMOTE#git@github.com:}"
+    SOURCE_URL="${SOURCE_URL%.git}"
+else
+    SOURCE_URL="${RAW_REMOTE%.git}"
+fi
+
+printf "# Building %s from \`%s\` (%s) on %s\n" "${DOCKER_TAGS[0]}" "$SOURCE_COMMIT" "$SOURCE_URL" "$CURRENT_HOST"
+
 
 #
-# Parse command line options
+# Parse command line options using descriptive booleans
 #
-option_enable_steamcmd_cache=false
-option_skip_pull=false
-option_skip_tests=false
-option_skip_push=false
-option_delete_built_image=false
+delete_built_image=false    # Deletes the newly built image locally during the exit cleanup phase
+delta_updates=false         # Indicates a delta-style build (unsupported, prints a warning)
+enable_steamcmd_cache=false # Passes a build argument to Docker to leverage a localized SteamCMD cache layer
+skip_docker_cache=false     # Forces Docker to build the image from scratch without using cached layers
+skip_pull=false             # Prevents Docker from pulling the latest remote base image before building
+skip_push=false             # Prevents pushing the finished tags to Docker Hub/registries
+skip_tests=false            # Bypasses the script-level validation tests usually executed post-build
 
-while [ "$#" -gt 0 ]
+while (( "$#" > 0 ))
 do
     case "$1" in
-        --enable-steamcmd-cache)
-            option_enable_steamcmd_cache=true
-            ;;
-        --skip-pull)
-            option_skip_pull=true
-            ;;
-        --skip-tests)
-            option_skip_tests=true
-            ;;
-        --skip-push-dockerhub|--skip-push)
-            option_skip_push=true
-            ;;
-        --delete-built-image)
-            option_delete_built_image=true
-            ;;
+        --delete-built-image)       delete_built_image=true ;;
+        -d|--delta)                 delta_updates=true ;;
+        --enable-steamcmd-cache)    enable_steamcmd_cache=true ;;
+        --no-docker-cache)          skip_docker_cache=true ;;
+        --skip-pull)                skip_pull=true ;;
+        --skip-push-dockerhub|--skip-push) skip_push=true ;;
+        --skip-tests)               skip_tests=true ;;
         *)
             printf "Error: unknown option '%s'. Exiting.\n" "${1}" >&2
             exit 12
@@ -83,7 +100,13 @@ done
 #
 # Validate options
 #
-if [ "$option_delete_built_image" = 'true' ] && [ "$option_skip_push" = 'true' ]; then
+if $skip_tests && ! $skip_push; then
+    printf "ERROR: Cannot skip tests while pushing to a remote registry is enabled.\n" >&2
+    printf "Please either run tests or include --skip-push.\n" >&2
+    exit 1
+fi
+
+if $delete_built_image && $skip_push; then
     printf "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" >&2
     printf "WARNING: You have selected both --delete-built-image and --skip-push.\n" >&2
     printf "The image will be built, but it will NOT be pushed and WILL be deleted locally.\n" >&2
@@ -100,16 +123,18 @@ fi
 cleanup() {
     printf "\n## Running Post-Build Cleanup\n"
 
-    # Clean up dangling images safely without relying heavily on non-portable xargs flags
-    local dangling_images
-    dangling_images=$(docker images -q --filter "label=org.opencontainers.image.source=https://github.com/LacledesLAN/gamesvr-7daystodie" --filter "dangling=true")
-    if [ -n "$dangling_images" ]; then
-        echo "$dangling_images" | xargs docker rmi
+    # Clean up dangling images dynamically using the resolved SOURCE_URL
+    if [ "$SOURCE_URL" != "unknown-remote" ]; then
+        local dangling_images
+        dangling_images=$(docker images -q --filter "label=org.opencontainers.image.source=${SOURCE_URL}" --filter "dangling=true")
+        if [ -n "$dangling_images" ]; then
+            echo "$dangling_images" | xargs -r docker rmi
+        fi
     fi
 
     # Conditionally delete the built/tagged images if opt-in flag was provided
-    if [ "$option_delete_built_image" = 'true' ]; then
-        for target_tag in "${docker_tags[@]}"; do
+    if $delete_built_image; then
+        for target_tag in "${DOCKER_TAGS[@]}"; do
             printf "Deleting local image: %s\n" "$target_tag"
             docker rmi "$target_tag" || true
         done
@@ -124,28 +149,38 @@ trap cleanup EXIT
 #
 docker_opts=()
 
-if [ "$option_skip_pull" != 'true' ]; then
+if ! $skip_pull; then
     docker_opts+=(--pull)
 else
     printf "Skipping pulling the latest base image\n"
 fi
 
-if [ "$option_enable_steamcmd_cache" = 'true' ]; then
+if $enable_steamcmd_cache; then
     printf "local SteamCMD cache is enabled\n"
     docker_opts+=(--build-arg ENABLE_STEAMCMD_CACHE="true")
+fi
+
+if $skip_docker_cache; then
+    printf "Docker cache layer matching is disabled (--no-cache)\n"
+    docker_opts+=(--no-cache)
 fi
 
 docker_opts+=(
     --build-arg BUILDDATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     --build-arg BUILDNODE="$CURRENT_HOST"
     --build-arg SOURCE_COMMIT="$SOURCE_COMMIT"
+    --build-arg SOURCE_URL="$SOURCE_URL"
 )
 
-for target_tag in "${docker_tags[@]}"; do
+for target_tag in "${DOCKER_TAGS[@]}"; do
     docker_opts+=(-t "$target_tag")
 done
 
-docker build . "${docker_opts[@]}" -f "$dockerfile_path" --rm
+if $delta_updates; then
+    printf "This build does not support delta-updates. Building full image.\n"
+fi
+
+docker build . "${docker_opts[@]}" -f "$DOCKERFILE_PATH" --rm
 
 
 #
@@ -153,8 +188,13 @@ docker build . "${docker_opts[@]}" -f "$dockerfile_path" --rm
 #
 printf "## Running Tests\n\n"
 
-if [ "$option_skip_tests" != 'true' ]; then
-    bash ./tests/test-gamesvr-7daystodie.sh "${docker_tags[0]}" "${docker_test_command[@]}"
+if ! $skip_tests; then
+    if [ -f "$TEST_SCRIPT_PATH" ]; then
+        bash "$TEST_SCRIPT_PATH" "${DOCKER_TAGS[0]}" "${DOCKER_TEST_COMMAND[@]}"
+    else
+        printf "ERROR: Test script expected at %s but not found.\n" "$TEST_SCRIPT_PATH" >&2
+        exit 1
+    fi
 else
     printf "Skipping tests.\n"
 fi
@@ -165,8 +205,8 @@ fi
 #
 printf "## Pushing Docker Tags\n\n"
 
-if [ "$option_skip_push" != 'true' ]; then
-    for target_tag in "${docker_tags[@]}"; do
+if ! $skip_push; then
+    for target_tag in "${DOCKER_TAGS[@]}"; do
         printf "Pushing %s...\n" "$target_tag"
         docker push "$target_tag"
     done
