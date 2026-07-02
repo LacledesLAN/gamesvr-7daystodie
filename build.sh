@@ -68,26 +68,20 @@ printf "# Building %s from \`%s\` (%s) on %s\n" "${DOCKER_TAGS[0]}" "$SOURCE_COM
 
 
 #
-# Parse command line options using descriptive booleans
+# Parse command line options into a single indexed array
 #
-delete_built_image=false    # Deletes the newly built image locally during the exit cleanup phase
-delta_updates=false         # Indicates a delta-style build (unsupported, prints a warning)
-enable_steamcmd_cache=false # Passes a build argument to Docker to leverage a localized SteamCMD cache layer
-skip_docker_cache=false     # Forces Docker to build the image from scratch without using cached layers
-skip_pull=false             # Prevents Docker from pulling the latest remote base image before building
-skip_push=false             # Prevents pushing the finished tags to Docker Hub/registries
-skip_tests=false            # Bypasses the script-level validation tests usually executed post-build
+build_options=()
 
 while (( "$#" > 0 ))
 do
     case "$1" in
-        --delete-built-image)       delete_built_image=true ;;
-        -d|--delta)                 delta_updates=true ;;
-        --enable-steamcmd-cache)    enable_steamcmd_cache=true ;;
-        --no-docker-cache)          skip_docker_cache=true ;;
-        --skip-pull)                skip_pull=true ;;
-        --skip-push-dockerhub|--skip-push) skip_push=true ;;
-        --skip-tests)               skip_tests=true ;;
+        -d|--delta)                  build_options+=("--delta") ;;
+        --delete-built-image)        build_options+=("--delete-built-image") ;;
+        --enable-steamcmd-cache)     build_options+=("--enable-steamcmd-cache") ;;
+        --no-docker-cache)           build_options+=("--no-docker-cache") ;;
+        --skip-pull)                 build_options+=("--skip-pull") ;;
+        --skip-tests)                build_options+=("--skip-tests") ;;
+        --skip-push)                 build_options+=("--skip-push") ;;
         *)
             printf "Error: unknown option '%s'. Exiting.\n" "${1}" >&2
             exit 12
@@ -96,17 +90,29 @@ do
     shift
 done
 
+# Helper function to check if a flag exists in the build_options array
+has_option() {
+    local target="$1"
+    local opt
+    for opt in "${build_options[@]+"${build_options[@]}"}"; do
+        if [[ "$opt" == "$target" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 
 #
 # Validate options
 #
-if $skip_tests && ! $skip_push; then
+if has_option "--skip-tests" && ! has_option "--skip-push"; then
     printf "ERROR: Cannot skip tests while pushing to a remote registry is enabled.\n" >&2
     printf "Please either run tests or include --skip-push.\n" >&2
     exit 1
 fi
 
-if $delete_built_image && $skip_push; then
+if has_option "--delete-built-image" && has_option "--skip-push"; then
     printf "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" >&2
     printf "WARNING: You have selected both --delete-built-image and --skip-push.\n" >&2
     printf "The image will be built, but it will NOT be pushed and WILL be deleted locally.\n" >&2
@@ -133,7 +139,7 @@ cleanup() {
     fi
 
     # Conditionally delete the built/tagged images if opt-in flag was provided
-    if $delete_built_image; then
+    if has_option "--delete-built-image"; then
         for target_tag in "${DOCKER_TAGS[@]}"; do
             printf "Deleting local image: %s\n" "$target_tag"
             docker rmi "$target_tag" || true
@@ -149,18 +155,18 @@ trap cleanup EXIT
 #
 docker_opts=()
 
-if ! $skip_pull; then
+if ! has_option "--skip-pull"; then
     docker_opts+=(--pull)
 else
     printf "Skipping pulling the latest base image\n"
 fi
 
-if $enable_steamcmd_cache; then
+if has_option "--enable-steamcmd-cache"; then
     printf "local SteamCMD cache is enabled\n"
     docker_opts+=(--build-arg ENABLE_STEAMCMD_CACHE="true")
 fi
 
-if $skip_docker_cache; then
+if has_option "--no-docker-cache"; then
     printf "Docker cache layer matching is disabled (--no-cache)\n"
     docker_opts+=(--no-cache)
 fi
@@ -176,7 +182,7 @@ for target_tag in "${DOCKER_TAGS[@]}"; do
     docker_opts+=(-t "$target_tag")
 done
 
-if $delta_updates; then
+if has_option "--delta"; then
     printf "This build does not support delta-updates. Building full image.\n"
 fi
 
@@ -188,7 +194,7 @@ docker build . "${docker_opts[@]}" -f "$DOCKERFILE_PATH" --rm
 #
 printf "## Running Tests\n\n"
 
-if ! $skip_tests; then
+if ! has_option "--skip-tests"; then
     if [ -f "$TEST_SCRIPT_PATH" ]; then
         bash "$TEST_SCRIPT_PATH" "${DOCKER_TAGS[0]}" "${DOCKER_TEST_COMMAND[@]}"
     else
@@ -205,7 +211,7 @@ fi
 #
 printf "## Pushing Docker Tags\n\n"
 
-if ! $skip_push; then
+if ! has_option "--skip-push"; then
     for target_tag in "${DOCKER_TAGS[@]}"; do
         printf "Pushing %s...\n" "$target_tag"
         docker push "$target_tag"
