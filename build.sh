@@ -53,7 +53,10 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-SOURCE_COMMIT=$(git rev-parse --short HEAD)$([ -n "$(git status --porcelain)" ] && echo "-dirty")
+SOURCE_COMMIT=$(git rev-parse --short HEAD)
+if [ -n "$(git status --porcelain)" ] || [ -n "$(git log @{u}..HEAD 2>/dev/null)" ]; then
+    SOURCE_COMMIT="${SOURCE_COMMIT}-dirty"
+fi
 
 # Extract Git remote URL and normalize it to an HTTPS web URL format for labels
 RAW_REMOTE=$(git config --get remote.origin.url || echo "unknown-remote")
