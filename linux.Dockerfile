@@ -2,7 +2,6 @@ FROM lacledeslan/steamcmd AS steamcmd-builder
 
 ARG ENABLE_STEAMCMD_CACHE=false
 
-# Ensure output directory exists
 WORKDIR /output
 
 RUN --mount=type=cache,id=7daystodie-steamcmd-cache,target=/mnt/steam-cache \
@@ -24,16 +23,17 @@ RUN --mount=type=cache,id=7daystodie-steamcmd-cache,target=/mnt/steam-cache \
     fi
 
 
-
-#=======================================================================
+#---------------------------------
 FROM debian:trixie-slim
 
-ARG BUILD_NODE=unspecified
-ARG GIT_REVISION=unspecified
+ARG BUILD_DATE=unspecified \
+    BUILD_NODE=unspecified \
+    GIT_REVISION=unspecified
 
 LABEL architecture="amd64" \
     com.lacledeslan.build-node="$BUILD_NODE" \
     maintainer="Laclede's LAN <contact@lacledeslan.com>" \
+    org.opencontainers.image.created="$BUILD_DATE" \
     org.opencontainers.image.description="7 Days to Die Dedicated Server" \
     org.opencontainers.image.revision="$GIT_REVISION" \
     org.opencontainers.image.source="https://github.com/LacledesLAN/gamesvr-7daystodie" \
@@ -64,5 +64,4 @@ WORKDIR /app
 
 CMD ["/bin/bash"]
 
-# Considers removing or rethinking this depending on downstream needs
 ONBUILD USER root
