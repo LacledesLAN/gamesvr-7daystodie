@@ -53,7 +53,7 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-SOURCE_COMMIT=$(git rev-parse --short HEAD)
+SOURCE_COMMIT=$(git rev-parse HEAD)
 if [ -n "$(git status --porcelain)" ] || [ -n "$(git log @{u}..HEAD 2>/dev/null)" ]; then
     SOURCE_COMMIT="${SOURCE_COMMIT}-dirty"
 fi
@@ -175,10 +175,8 @@ if has_option "--no-docker-cache"; then
 fi
 
 docker_opts+=(
-    --build-arg BUILDDATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    --build-arg BUILDNODE="$CURRENT_HOST"
-    --build-arg SOURCE_COMMIT="$SOURCE_COMMIT"
-    --build-arg SOURCE_URL="$SOURCE_URL"
+    --build-arg BUILD_NODE="$CURRENT_HOST"
+    --build-arg GIT_REVISION="$SOURCE_COMMIT"
 )
 
 for target_tag in "${DOCKER_TAGS[@]}"; do
