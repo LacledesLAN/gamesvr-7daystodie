@@ -31,13 +31,13 @@ ARG BUILD_DATE=unspecified \
     GIT_REVISION=unspecified
 
 LABEL architecture="amd64" \
-    com.lacledeslan.build-node="$BUILD_NODE" \
-    maintainer="Laclede's LAN <contact@lacledeslan.com>" \
-    org.opencontainers.image.created="$BUILD_DATE" \
-    org.opencontainers.image.description="7 Days to Die Dedicated Server" \
-    org.opencontainers.image.revision="$GIT_REVISION" \
-    org.opencontainers.image.source="https://github.com/LacledesLAN/gamesvr-7daystodie" \
-    org.opencontainers.image.vendor="Laclede's LAN"
+      com.lacledeslan.build-node="${BUILD_NODE}" \
+      maintainer="Laclede's LAN <contact@lacledeslan.com>" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.description="7 Days to Die Dedicated Server" \
+      org.opencontainers.image.revision="${GIT_REVISION}" \
+      org.opencontainers.image.source="https://github.com/LacledesLAN/gamesvr-7daystodie" \
+      org.opencontainers.image.vendor="Laclede's LAN"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
