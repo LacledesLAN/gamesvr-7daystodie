@@ -81,7 +81,7 @@ do
         -d|--delta)                  build_options+=("--delta") ;;
         --delete-built-image)        build_options+=("--delete-built-image") ;;
         --enable-steamcmd-cache)     build_options+=("--enable-steamcmd-cache") ;;
-        --no-docker-cache)           build_options+=("--no-docker-cache") ;;
+        --disable-docker-cache)           build_options+=("--disable-docker-cache") ;;
         --skip-pull)                 build_options+=("--skip-pull") ;;
         --skip-tests)                build_options+=("--skip-tests") ;;
         --skip-push)                 build_options+=("--skip-push") ;;
@@ -169,7 +169,7 @@ if has_option "--enable-steamcmd-cache"; then
     docker_opts+=(--build-arg ENABLE_STEAMCMD_CACHE="true")
 fi
 
-if has_option "--no-docker-cache"; then
+if has_option "--disable-docker-cache"; then
     printf "Docker cache layer matching is disabled (--no-cache)\n"
     docker_opts+=(--no-cache)
 fi
